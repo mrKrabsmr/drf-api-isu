@@ -1,0 +1,95 @@
+version: '3'
+
+services:
+  isu:
+    build: 
+      context: ./isu
+    container_name: isu
+    ports:
+      - 8000:8000
+    restart: always
+    volumes:
+      - ./isu:/isu
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=base
+      - DB_USER=isuuser
+      - DB_PASS=1990010
+    command: sh -c 
+      "python3 manage.py makemigrations users category resume jobs
+      && python3 manage.py migrate
+      && python3 manage.py runserver 0.0.0.0:8000"
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=base
+      - POSTGRES_USER=isuuser
+      - POSTGRES_PASSWORD=1990010
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:latest
+    container_name: redis
+  worker:
+    build: 
+      context: ./isu
+    entrypoint: celery
+    command: -A celery_app.app worker --loglevel=info
+    volumes:
+      - ./isu:/isu
+    links:
+      - redis
+    depends_on:
+      - redis
+  worker2:
+    build: 
+      context: ./isu
+    entrypoint: celery
+    command: -A celery_app.app worker --loglevel=info
+    volumes:
+      - ./isu:/isu
+    links:
+      - redis
+    depends_on:
+      - redis
+  flower:
+    build: 
+      context: ./isu
+    entrypoint: celery
+    command: -A celery_app.app flower
+    volumes:
+      - ./isu:/isu
+    links:
+      - redis
+    depends_on:
+      - redis
+    ports:
+      - 5555:5555
+  redisinsight:
+    image: redislabs/redisinsight
+    container_name: redisinsight
+    depends_on:
+      - redis
+    ports:
+      - 8001:8001
+  elastic:
+    build: 
+      context: ./elasticsearch
+    container_name: elastic
+    restart: always
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      xpack.security.enabled: false
+      discovery.type: single-node
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+volumes:
+  pgdata: {}
+  esdata: {}
