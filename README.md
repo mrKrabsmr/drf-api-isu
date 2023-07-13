@@ -6,7 +6,7 @@ You can create an add-on to the api in the form of a web application, a telegram
 Ease of use is created by docker-compose.
 The api uses for its work:
 - PostgreSQL (for data storage)
--Elasticsearch (for full-text search)
--Redis (as a broker and for hash storage)
--Celery
+- Elasticsearch (for full-text search)
+- Redis (as a broker and for hash storage)
+- Celery
 Flower and Redisinsight are also used for data analytics
